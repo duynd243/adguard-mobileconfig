@@ -1,5 +1,6 @@
 import { Hono } from "hono";
 import { env } from "hono/adapter";
+import { basicAuth } from "hono/basic-auth";
 
 const app = new Hono();
 
@@ -47,26 +48,36 @@ const TEMPLATE_XML = `<?xml version="1.0" encoding="UTF-8"?>
 </dict>
 </plist>`;
 
-app.get("/api/config", (c) => {
-  const { client_id } = c.req.query();
-  const { MY_KEY } = env<{ MY_KEY: string }>(c);
+app.get(
+  "/config/:client_id",
+  basicAuth({
+    username: "admin",
+    verifyUser: (username, password, c) => {
+      const { BASIC_AUTH_PASSWORD } = env<{ BASIC_AUTH_PASSWORD: string }>(c);
+      return username === "admin" && password === BASIC_AUTH_PASSWORD;
+    },
+  }),
+  (c) => {
+    const client_id = c.req.param("client_id");
+    const { MY_KEY } = env<{ MY_KEY: string }>(c);
 
-  if (!client_id || !MY_KEY) {
-    return c.json({ error: "Missing client_id or MY_KEY env" }, 400);
+    if (!client_id || !MY_KEY) {
+      return c.json({ error: "Missing client_id or MY_KEY env" }, 400);
+    }
+
+    const profileUUID = crypto.randomUUID();
+    const configXML = TEMPLATE_XML.replace(/%MY_KEY%/g, MY_KEY)
+      .replace(/%CLIENT_ID%/g, client_id)
+      .replace("TEMPLATE-UUID", profileUUID);
+
+    c.header("Content-Type", "application/x-apple-aspen-config");
+    c.header(
+      "Content-Disposition",
+      `attachment; filename="Duy-AdGuard-DoH-${client_id}.mobileconfig"`
+    );
+
+    return c.body(configXML, 200);
   }
-
-  const profileUUID = crypto.randomUUID();
-  const configXML = TEMPLATE_XML.replace(/%MY_KEY%/g, MY_KEY)
-    .replace(/%CLIENT_ID%/g, client_id)
-    .replace("TEMPLATE-UUID", profileUUID);
-
-  c.header("Content-Type", "application/x-apple-aspen-config");
-  c.header(
-    "Content-Disposition",
-    `attachment; filename="Duy-AdGuard-DoH-${client_id}.mobileconfig"`
-  );
-
-  return c.body(configXML, 200);
-});
+);
 
 export default app;
