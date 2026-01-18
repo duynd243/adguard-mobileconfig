@@ -41,7 +41,7 @@ const TEMPLATE_XML = `<?xml version="1.0" encoding="UTF-8"?>
                 <key>DNSProtocol</key>
                 <string>HTTPS</string>
                 <key>ServerURL</key>
-                <string>https://159.13.39.131.sslip.io/%MY_KEY%/dns-query/%CLIENT_ID%</string>
+                <string>%BASE_PATH%/%MY_KEY%/dns-query/%CLIENT_ID%</string>
             </dict>
         </dict>
     </array>
@@ -59,14 +59,18 @@ app.get(
   }),
   (c) => {
     const client_id = c.req.param("client_id");
-    const { MY_KEY } = env<{ MY_KEY: string }>(c);
+    const { MY_KEY, BASE_PATH } = env<{ MY_KEY: string; BASE_PATH: string }>(c);
 
-    if (!client_id || !MY_KEY) {
-      return c.json({ error: "Missing client_id or MY_KEY env" }, 400);
+    if (!client_id || !MY_KEY || !BASE_PATH) {
+      return c.text("Missing parameters", 400);
     }
 
     const profileUUID = crypto.randomUUID();
-    const configXML = TEMPLATE_XML.replace(/%MY_KEY%/g, MY_KEY)
+    const configXML = TEMPLATE_XML.replace(
+      /%BASE_PATH%/g,
+      BASE_PATH.replace(/\/+$/, "")
+    )
+      .replace(/%MY_KEY%/g, MY_KEY)
       .replace(/%CLIENT_ID%/g, client_id)
       .replace("TEMPLATE-UUID", profileUUID);
 
