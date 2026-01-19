@@ -16,11 +16,11 @@ const TEMPLATE_XML = `<?xml version="1.0" encoding="UTF-8"?>
     <key>PayloadType</key>
     <string>Configuration</string>
     <key>PayloadOrganization</key>
-    <string>Duy AdGuard</string>
+    <string>AdGuard</string>
     <key>PayloadIdentifier</key>
     <string>com.duy.adguard.doh</string>
     <key>PayloadDisplayName</key>
-    <string>Duy AdGuard DoH</string>
+    <string>AdGuard DoH</string>
     <key>PayloadDescription</key>
     <string>AdGuard Home DoH - Nginx</string>
     <key>PayloadContent</key>
